@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel – AvtoElectroSystem</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+  margin:0;
+  background:#070147;
+  font-family:"Segoe UI",sans-serif;
+  color:white;
+}
+header{
+  padding:20px 40px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#0b0549;
+  border-bottom:2px solid #00ffff;
+}
+header h2{margin:0;color:#00ffff}
+header button{
+  padding:8px 18px;
+  border:none;
+  border-radius:20px;
+  font-weight:700;
+  cursor:pointer;
+  background:#ff5555;
+  color:white;
+}
+.container{max-width:1600px;margin:30px auto;padding:0 20px}
+.stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:20px;
+  margin-bottom:30px;
+}
+.card{
+  background:rgba(255,255,255,.06);
+  padding:20px;
+  border-radius:14px;
+  text-align:center;
+}
+.card h3{margin:0;color:#00ffff;font-size:28px}
+.card p{margin:6px 0 0;color:#ccc}
+.controls{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+}
+.controls input,select,button{
+  padding:8px 12px;
+  border-radius:8px;
+  border:none;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:rgba(255,255,255,.05);
+  border-radius:14px;
+  overflow:hidden;
+  margin-top: 30px;
+  font-size: 13px;
+}
+th,td{
+  padding:12px;
+  font-size:14px;
+}
+th{color:#00ffff;text-align:left}
+tr:hover{background:rgba(0,255,255,.08)}
+.badge{
+  padding:4px 8px;
+  border-radius:10px;
+  font-size:12px;
+}
+.pass{background:#00aa88}
+.fail{background:#aa0044}
+.flag{background:#ff9900}
+.block{background:#444}
+.action-btn{
+  cursor:pointer;
+  color:#00ffff;
+  margin-right:8px;
+}
+canvas{background:#0b0549;border-radius:14px;padding:10px}
+.chart-box {
+  max-width: 420px;
+  max-height: 320px;
+  margin: 0 auto;
+}
+
+.chart-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>🛡 Admin Dashboard</h2>
+  <button onclick="logout()">Chiqish</button>
+</header>
+
+<div class="container">
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="card"><h3 id="total">0</h3><p>Topshiruvlar</p></div>
+    <div class="card"><h3 id="passed">0</h3><p>O‘tganlar</p></div>
+    <div class="card"><h3 id="failed">0</h3><p>Yiqilganlar</p></div>
+    <div class="card"><h3 id="avg">0%</h3><p>O‘rtacha</p></div>
+  </div>
+
+  <!-- CHARTS -->
+ <div class="stats">
+  <div class="chart-box">
+    <canvas id="chartPass"></canvas>
+  </div>
+
+  <div class="chart-box">
+    <canvas id="chartAvg"></canvas>
+  </div>
+</div>
+
+
+  <!-- FILTERS -->
+  <div class="controls">
+    <select id="testFilter">
+      <option value="all">Barcha testlar</option>
+    </select>
+    <input id="emailFilter" placeholder="Email bo‘yicha qidirish">
+    <select id="statusFilter">
+      <option value="all">Barchasi</option>
+      <option value="pass">O‘tgan</option>
+      <option value="fail">Yiqilgan</option>
+      <option value="flag">Flag</option>
+      <option value="block">Bloklangan</option>
+    </select>
+    <button onclick="exportCSV()">⬇ Excel</button>
+  </div>
+
+  <!-- TABLE -->
+  <table>
+    <thead>
+      <tr>
+        <th>Ism</th>
+        <th>Email</th>
+        <th>Test</th>
+        <th>Ball</th>
+        <th>Status</th>
+        <th>Harakat</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCDbOvEFvs1eOiYFrO7r2DGFmcQzSQG4i4",
+  projectId:"avtomobillarelektrtizimlari"
+});
+const auth=firebase.auth();
+const db=firebase.firestore();
+
+auth.onAuthStateChanged(u=>{
+  if(!u) location.href="admin-login.html";
+  else load();
+});
+
+let allData=[];
+
+function load(){
+  db.collection("results").orderBy("createdAt","desc")
+  .onSnapshot(s=>{
+    allData=s.docs.map(d=>({id:d.id,...d.data()}));
+    render();
+    stats();
+    charts();
+    fillTests();
+  });
+}
+
+function render(){
+  const tb=document.getElementById("rows");
+  tb.innerHTML="";
+  const ef=emailFilter.value.toLowerCase();
+  const tf=testFilter.value;
+  const sf=statusFilter.value;
+
+  allData.filter(d=>{
+    if(tf!=="all" && d.testId!==tf) return false;
+    if(ef && !d.email.toLowerCase().includes(ef)) return false;
+    if(sf==="pass" && !d.passed) return false;
+    if(sf==="fail" && d.passed) return false;
+    if(sf==="flag" && !d.flagged) return false;
+    if(sf==="block" && !d.blocked) return false;
+    return true;
+  }).forEach(d=>{
+    tb.innerHTML+=`
+    <tr>
+      <td>${d.name}</td>
+      <td>${d.email}</td>
+      <td>${d.testId}</td>
+      <td>${d.score}/${d.total}</td>
+      <td>
+        <span class="badge ${d.blocked?'block':d.flagged?'flag':d.passed?'pass':'fail'}">
+          ${d.blocked?'BLOCK':d.flagged?'FLAG':d.passed?'PASS':'FAIL'}
+        </span>
+      </td>
+      <td>
+        <span class="action-btn" onclick="block('${d.id}')">🚫</span>
+        <span class="action-btn" onclick="flag('${d.id}')">⚠</span>
+        <span class="action-btn" onclick="del('${d.id}')">🗑</span>
+      </td>
+    </tr>`;
+  });
+}
+
+function block(id){db.collection("results").doc(id).update({blocked:true})}
+function flag(id){db.collection("results").doc(id).update({flagged:true})}
+function del(id){db.collection("results").doc(id).delete()}
+
+function stats(){
+  total.textContent=allData.length;
+  passed.textContent=allData.filter(d=>d.passed).length;
+  failed.textContent=allData.filter(d=>!d.passed).length;
+  avg.textContent=Math.round(
+    allData.reduce((a,b)=>a+b.percent,0)/allData.length||0
+  )+"%";
+}
+
+let c1,c2;
+function charts(){
+  const p=passed.textContent;
+  const f=failed.textContent;
+  c1&&c1.destroy();
+  c2&&c2.destroy();
+  c1=new Chart(chartPass,{type:"doughnut",
+    data:{labels:["Pass","Fail"],datasets:[{data:[p,f],backgroundColor:["#00aa88","#aa0044"]}]}
+  });
+  c2=new Chart(chartAvg,{type:"bar",
+    data:{labels:["Avg"],datasets:[{data:[avg.textContent.replace('%','')],backgroundColor:"#00ffff"}]}
+  });
+}
+c1 = new Chart(chartPass, {
+  type: "doughnut",
+  data,
+  options: {
+    cutout: "70%",   // was default (too thick)
+    plugins: {
+      legend: { position: "bottom" }
+    }
+  }
+});
+function fillTests(){
+  const set=[...new Set(allData.map(d=>d.testId))];
+  testFilter.innerHTML='<option value="all">Barchasi</option>';
+  set.forEach(t=>testFilter.innerHTML+=`<option>${t}</option>`);
+}
+
+emailFilter.oninput=testFilter.onchange=statusFilter.onchange=render;
+
+function exportCSV(){
+  let rows=[["Ism","Email","Test","Ball","Status"]];
+  document.querySelectorAll("#rows tr").forEach(tr=>{
+    rows.push([...tr.children].slice(0,5).map(td=>td.innerText));
+  });
+  const csv=rows.map(r=>r.join(",")).join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv]));
+  a.download="results.csv";
+  a.click();
+}
+
+function logout(){auth.signOut().then(()=>location.href="admin-login.html")}
+</script>
+
+</body>
+</html>

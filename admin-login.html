@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>Admin Login</title>
+
+<style>
+body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background: linear-gradient(135deg,#070147,#0b0549);
+    font-family: "Segoe UI", sans-serif;
+    color:white;
+}
+
+.login-box{
+    width:360px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+    padding:30px;
+    border-radius:16px;
+    box-shadow:0 0 40px rgba(0,255,255,0.25);
+}
+
+.login-box h2{
+    text-align:center;
+    margin-bottom:20px;
+    color:#00ffff;
+}
+
+.login-box input{
+    width:100%;
+    padding:12px;
+    margin-bottom:14px;
+    border:none;
+    border-radius:8px;
+    outline:none;
+    background:#1b2552;
+    color:white;
+    font-size:15px;
+}
+
+.login-box input::placeholder{
+    color:#aaa;
+}
+
+.login-box button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:30px;
+    font-weight:700;
+    font-size:16px;
+    cursor:pointer;
+    background: linear-gradient(135deg,#00ffff,#0080ff);
+    color:black;
+    transition:.25s;
+}
+
+.login-box button:hover{
+    transform: translateY(-2px);
+    box-shadow:0 10px 30px rgba(0,255,255,0.4);
+}
+
+#error{
+    margin-top:10px;
+    text-align:center;
+    color:#ff8080;
+    font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="login-box">
+    <h2>🔐 Admin Kirish</h2>
+
+    <input id="email" type="email" placeholder="Admin email">
+    <input id="password" type="password" placeholder="Parol">
+
+    <button onclick="login()">Kirish</button>
+    <p id="error"></p>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCDbOvEFvs1eOiYFrO7r2DGFmcQzSQG4i4",
+  authDomain: "avtomobillarelektrtizimlari.firebaseapp.com",
+};
+
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+function login(){
+  auth.signInWithEmailAndPassword(email.value,password.value)
+    .then(()=> location.href="admin.html")
+    .catch(e => error.textContent = e.message);
+}
+</script>
+
+</body>
+</html>

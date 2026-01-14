@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>Test – AvtoElectroSystem</title>
+
+<style>
+body{background:#070147;font-family:"Segoe UI",sans-serif;color:white}
+.test-wrapper{max-width:800px;margin:140px auto;background:rgba(255,255,255,.05);padding:30px;border-radius:16px}
+h2{text-align:center;color:#00ffff}
+.student-info input{width:100%;padding:12px;margin-bottom:12px;border-radius:8px;border:none}
+.question{margin:25px 0}
+.question p{color:#ffd24d;font-weight:600}
+.option{display:block;background:#1b2552;padding:10px 14px;border-radius:8px;margin-bottom:8px;cursor:pointer}
+.submit-btn{width:100%;padding:14px;border-radius:30px;border:none;font-weight:700;background:linear-gradient(135deg,#00ffff,#0080ff);cursor:pointer}
+.result{text-align:center;font-size:20px;color:#00ffff;margin-top:20px}
+.timer{text-align:center;color:#ffcc00;font-size:18px;margin-bottom:15px}
+.center{min-height:100vh;display:flex;align-items:center;justify-content:center}
+</style>
+</head>
+
+<body>
+
+<div class="test-wrapper">
+  <div class="timer" id="timer"></div>
+  <h2 id="title"></h2>
+
+  <div class="student-info">
+    <input id="name" placeholder="Ism">
+    <input id="surname" placeholder="Familiya">
+    <input id="email" placeholder="Gmail">
+  </div>
+
+  <div id="questions"></div>
+
+  <button class="submit-btn" id="submitBtn">Yakunlash</button>
+  <div class="result" id="result"></div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
